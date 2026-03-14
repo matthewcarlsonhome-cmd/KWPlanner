@@ -2,7 +2,7 @@
 
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -46,7 +46,7 @@ async def export_gads_editor(
 
 @router.post("/negatives")
 async def export_negatives(
-    account_id: int,
+    account_id: int = Query(...),
     db: AsyncSession = Depends(get_db),
 ):
     """Export negative keyword candidates."""
@@ -84,8 +84,8 @@ async def export_all(
 
 @router.post("/sheets")
 async def export_to_sheets(
-    account_id: int,
-    spreadsheet_url: str,
+    account_id: int = Query(...),
+    spreadsheet_url: str = Query(...),
     db: AsyncSession = Depends(get_db),
 ):
     """Export to Google Sheets (requires Sheets API auth)."""
