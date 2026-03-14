@@ -4,6 +4,7 @@ import asyncio
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -27,11 +28,15 @@ async def _run_research_background(account_id: Optional[int], refresh_token: str
             logging.getLogger(__name__).error(f"Background research failed: {e}")
 
 
+class RunRequest(BaseModel):
+    account_id: Optional[int] = None
+
+
 @router.post("/run")
 async def run_research(
     request: Request,
     background_tasks: BackgroundTasks,
-    account_id: Optional[int] = None,
+    body: RunRequest = RunRequest(),
     db: AsyncSession = Depends(get_db),
 ):
     """Start keyword research for one or all accounts."""
@@ -53,7 +58,7 @@ async def run_research(
     }
 
     background_tasks.add_task(
-        _run_research_background, account_id, refresh_token, settings_dict
+        _run_research_background, body.account_id, refresh_token, settings_dict
     )
 
     return {"status": "started", "message": "Research is starting in the background"}
