@@ -250,22 +250,107 @@ sudo systemctl enable kwplanner
 sudo systemctl start kwplanner
 ```
 
-### Option B: Render (Platform-as-a-Service)
+### Option B: Render + Supabase (Recommended)
 
-**One-click deploy** using the included `render.yaml` blueprint:
+This project includes a `render.yaml` blueprint that provisions both services automatically.
 
-1. Push the repo to GitHub
-2. Go to https://dashboard.render.com → **New** → **Blueprint**
-3. Connect your repo — Render reads `render.yaml` and provisions everything
-4. Fill in the Google Ads / OAuth env vars when prompted (`sync: false` vars)
+#### Prerequisites
 
-**Using Supabase instead of Render's database**: Remove the `databases` block from
-`render.yaml` and set `DATABASE_URL` manually:
+1. A **GitHub** account with this repo pushed to it
+2. A **Render** account (https://render.com — free tier works)
+3. A **Supabase** account with a project created (see [Supabase setup](#production-supabase-postgresql-recommended) below)
+4. Your **Google Ads API** credentials ready (developer token, OAuth client ID/secret)
+
+#### Step 1: Prepare `render.yaml` for Supabase
+
+Since you're using Supabase for the database, edit `render.yaml` and remove the
+`databases` block at the top:
+
+```yaml
+# DELETE these lines from render.yaml:
+databases:
+  - name: kwplanner-db
+    plan: free
+    databaseName: kwplanner
+    user: kwplanner
 ```
-DATABASE_URL=postgresql+asyncpg://user:pass@your-project.supabase.co:5432/postgres
+
+Then replace the `DATABASE_URL` entry in the backend `envVars` section:
+
+```yaml
+# REPLACE this:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: kwplanner-db
+          property: connectionURI
+
+# WITH this:
+      - key: DATABASE_URL
+        sync: false    # You'll paste your Supabase connection string in the dashboard
 ```
 
-**Manual setup** (without the blueprint):
+#### Step 2: Deploy via Blueprint
+
+1. Push your repo to GitHub (if not already)
+2. Go to https://dashboard.render.com
+3. Click **New** → **Blueprint**
+4. Connect your GitHub account and select the KWPlanner repo
+5. Render detects `render.yaml` and shows the services it will create:
+   - **kwplanner-api** — Python web service (backend)
+   - **kwplanner-web** — Static site (frontend)
+6. Click **Apply** to start provisioning
+
+#### Step 3: Configure environment variables
+
+After the blueprint creates the services, Render prompts for variables marked `sync: false`.
+Fill in each one:
+
+| Variable | Where to find it |
+|----------|-----------------|
+| `DATABASE_URL` | Supabase dashboard → Project Settings → Database → Connection string (URI). Change scheme to `postgresql+asyncpg://` and use **port 6543** (pooler). See [Supabase setup](#production-supabase-postgresql-recommended). |
+| `GOOGLE_ADS_DEVELOPER_TOKEN` | Google Ads UI → Tools & Settings → API Center |
+| `GOOGLE_ADS_LOGIN_CUSTOMER_ID` | Your MCC account ID (digits only, no dashes) |
+| `GOOGLE_CLIENT_ID` | Google Cloud Console → APIs & Services → Credentials |
+| `GOOGLE_CLIENT_SECRET` | Same location as Client ID |
+| `GOOGLE_REDIRECT_URI` | Set to `https://<your-kwplanner-api>.onrender.com/api/auth/callback` — copy the backend URL from the Render dashboard after deploy |
+
+#### Step 4: Update Google OAuth redirect URI
+
+1. Copy your backend service URL from Render (e.g., `https://kwplanner-api.onrender.com`)
+2. Go to Google Cloud Console → APIs & Services → Credentials
+3. Edit your OAuth 2.0 Client ID
+4. Add to **Authorized redirect URIs**:
+   ```
+   https://kwplanner-api.onrender.com/api/auth/callback
+   ```
+
+#### Step 5: Connect frontend to backend
+
+The frontend needs to know the backend URL. In the Render dashboard for
+**kwplanner-web**, add an environment variable:
+
+| Variable | Value |
+|----------|-------|
+| `VITE_API_BASE` | `https://kwplanner-api.onrender.com` (your backend URL) |
+
+Then trigger a redeploy of the static site so Vite bakes in the new value at build time.
+
+#### Step 6: Verify the deployment
+
+1. Open your frontend URL (e.g., `https://kwplanner-web.onrender.com`)
+2. Check the backend health endpoint: `https://kwplanner-api.onrender.com/api/health`
+3. Click **Sync from MCC** to verify the Google Ads API connection
+4. Check the Supabase Table Editor to confirm tables were created on first boot
+
+#### Render free tier notes
+
+- Free web services spin down after 15 minutes of inactivity — first request after idle takes ~30s
+- Free static sites have no spin-down (always fast)
+- To avoid cold starts, upgrade the backend to the Starter plan ($7/mo) or add a health check ping via UptimeRobot/cron-job.org
+
+#### Manual setup (without the blueprint)
+
+If you prefer to create each service individually instead of using the blueprint:
 
 **Backend (Render Web Service)**:
 1. Create a new Web Service pointing to the repo
