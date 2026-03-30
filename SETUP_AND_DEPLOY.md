@@ -252,17 +252,34 @@ sudo systemctl start kwplanner
 
 ### Option B: Render (Platform-as-a-Service)
 
+**One-click deploy** using the included `render.yaml` blueprint:
+
+1. Push the repo to GitHub
+2. Go to https://dashboard.render.com → **New** → **Blueprint**
+3. Connect your repo — Render reads `render.yaml` and provisions everything
+4. Fill in the Google Ads / OAuth env vars when prompted (`sync: false` vars)
+
+**Using Supabase instead of Render's database**: Remove the `databases` block from
+`render.yaml` and set `DATABASE_URL` manually:
+```
+DATABASE_URL=postgresql+asyncpg://user:pass@your-project.supabase.co:5432/postgres
+```
+
+**Manual setup** (without the blueprint):
+
 **Backend (Render Web Service)**:
 1. Create a new Web Service pointing to the repo
-2. Build command: `cd backend && pip install -r requirements.txt`
-3. Start command: `cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-4. Add environment variables from `.env.example`
+2. Root directory: `backend`
+3. Build command: `pip install -r requirements.txt asyncpg`
+4. Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+5. Add environment variables from `.env.example`
 
 **Frontend (Render Static Site)**:
 1. Create a new Static Site pointing to the repo
-2. Build command: `cd frontend && npm install && npm run build`
-3. Publish directory: `frontend/dist`
-4. Add rewrite rule: `/* → /index.html` (for SPA routing)
+2. Root directory: `frontend`
+3. Build command: `npm install && npm run build`
+4. Publish directory: `dist`
+5. Add rewrite rule: `/* → /index.html` (for SPA routing)
 
 ### Option C: Railway
 
