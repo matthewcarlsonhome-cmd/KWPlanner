@@ -298,16 +298,57 @@ DATABASE_URL=postgresql+asyncpg://user:pass@your-project.supabase.co:5432/postgr
 - Good for single-user / small team (SSP's ~5 users)
 - All data persists across restarts
 
-### Production: PostgreSQL (optional upgrade)
-If you need multi-server deployment or more concurrent users:
+### Production: Supabase PostgreSQL (recommended)
 
-1. Set up a PostgreSQL database (Supabase, Neon, or self-hosted)
-2. Update `.env`:
+Supabase provides a free managed PostgreSQL database that works out of the box.
+
+#### 1. Create the Supabase project
+1. Go to https://supabase.com and sign in (GitHub login works)
+2. Click **New Project**
+3. Choose an organization, name it `kwplanner`, set a strong database password
+4. Select a region close to your Render deployment (e.g., US East)
+5. Click **Create new project** — provisioning takes ~2 minutes
+
+#### 2. Get the connection string
+1. In your Supabase dashboard, go to **Project Settings** → **Database**
+2. Under **Connection string**, select **URI** and copy it
+3. The format is:
    ```
-   DATABASE_URL=postgresql+asyncpg://user:pass@host:5432/kwplanner
+   postgresql://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres
    ```
-3. Add `asyncpg` to requirements: `pip install asyncpg`
-4. The SQLAlchemy models work with both SQLite and PostgreSQL
+4. Modify it for async SQLAlchemy — change the scheme to `postgresql+asyncpg`:
+   ```
+   DATABASE_URL=postgresql+asyncpg://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres
+   ```
+
+#### 3. Connection pooling (important)
+Supabase provides two connection modes on different ports:
+- **Port 5432** — Direct connection (limited to ~10-15 concurrent connections on free tier)
+- **Port 6543** — Transaction-mode pooling via Supavisor (recommended for serverless/PaaS)
+
+**Use port 6543** (the pooler) for Render deployments. The URI from step 2 already uses this.
+
+#### 4. Install the driver
+```bash
+pip install asyncpg
+```
+Or on Render, the `render.yaml` blueprint already includes `asyncpg` in the build command.
+
+#### 5. Set the environment variable
+Add `DATABASE_URL` to your `.env` (local) or Render environment variables (production):
+```
+DATABASE_URL=postgresql+asyncpg://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres
+```
+
+#### 6. Table creation
+Tables are created automatically on first startup — SQLAlchemy's `create_all()` runs
+when the backend boots. No manual migration or SQL scripts needed.
+
+You can verify in the Supabase dashboard under **Table Editor** after the first backend start.
+
+#### Alternative: Other PostgreSQL providers
+Any PostgreSQL provider works (Neon, Railway, self-hosted). Just set the `DATABASE_URL`
+with the `postgresql+asyncpg://` scheme and install `asyncpg`.
 
 ---
 
