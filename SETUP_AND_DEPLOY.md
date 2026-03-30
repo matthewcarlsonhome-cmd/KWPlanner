@@ -30,7 +30,12 @@ Frontend (React + Tailwind + Vite)  →  Backend (Python FastAPI)  →  SQLite D
 
 **b. Google Cloud OAuth2 Credentials**
 - Go to https://console.cloud.google.com
-- Create project "SSP Keyword Research"
+- Create project "KW Research" (or any name)
+- **Parent resource note**: If you're on a Google Workspace domain, this field is
+  mandatory and requires org admin permissions. The easiest workaround is to sign
+  in with a **personal Gmail account** instead — personal accounts don't require
+  a parent resource. The OAuth credentials work the same regardless of which
+  account creates them.
 - Enable the **Google Ads API**
 - Go to APIs & Services > Credentials > Create OAuth 2.0 Client ID
 - Type: Web application
