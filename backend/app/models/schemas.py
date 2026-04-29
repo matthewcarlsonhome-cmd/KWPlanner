@@ -222,6 +222,75 @@ class SettingsUpdate(BaseModel):
     relevance_weight: Optional[int] = None
 
 
+# --- Import ---
+class ImportOut(BaseModel):
+    id: int
+    account_id: Optional[int] = None
+    file_name: str
+    file_type: str
+    uploaded_by: Optional[str] = None
+    row_count: Optional[int] = None
+    column_mapping: Optional[dict] = None
+    status: str = "pending"
+    error_message: Optional[str] = None
+    account_name: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+    model_config = {"from_attributes": True}
+
+
+class ImportUploadResponse(BaseModel):
+    upload_id: int
+    file_name: str
+    file_type: str
+    row_count: int
+    detected_columns: List[str]
+    column_mapping: dict
+    preview: List[dict]
+
+
+class ImportConfirmRequest(BaseModel):
+    upload_id: int
+    column_mapping: dict
+    account_name: str
+
+
+class ImportedSearchTermOut(BaseModel):
+    id: int
+    import_id: int
+    account_id: Optional[int] = None
+    search_term: str
+    campaign: Optional[str] = None
+    ad_group: Optional[str] = None
+    matched_keyword: Optional[str] = None
+    match_type_triggered: Optional[str] = None
+    impressions: Optional[int] = None
+    clicks: Optional[int] = None
+    cost: Optional[float] = None
+    conversions: Optional[float] = None
+    conv_rate: Optional[float] = None
+    ctr: Optional[float] = None
+    recommended_match_type: Optional[str] = None
+    match_type_reason: Optional[str] = None
+    relevance_score: Optional[int] = None
+    relevance_category: Optional[str] = None
+    priority: Optional[str] = None
+    suggested_ad_group: Optional[str] = None
+    is_duplicate: bool = False
+    is_negative_candidate: bool = False
+    created_at: Optional[datetime] = None
+
+    model_config = {"from_attributes": True}
+
+
+class ImportResultsPage(BaseModel):
+    items: List[ImportedSearchTermOut]
+    total: int
+    page: int
+    per_page: int
+    pages: int
+
+
 # --- Auth ---
 class UserInfo(BaseModel):
     email: str

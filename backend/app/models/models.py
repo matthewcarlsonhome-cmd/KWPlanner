@@ -28,6 +28,8 @@ class Account(Base):
     keyword_ideas = relationship("KeywordIdea", back_populates="account")
     decisions = relationship("Decision", back_populates="account")
     negative_flags = relationship("NegativeFlag", back_populates="account")
+    imports = relationship("Import", back_populates="account")
+    imported_search_terms = relationship("ImportedSearchTerm", back_populates="account")
 
 
 class ResearchRun(Base):
@@ -143,9 +145,62 @@ class NegativeFlag(Base):
     account = relationship("Account", back_populates="negative_flags")
 
 
+class Import(Base):
+    __tablename__ = "imports"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    account_id = Column(Integer, ForeignKey("accounts.id"))
+    file_name = Column(String(255), nullable=False)
+    file_type = Column(String(20), nullable=False)  # keywords, search_terms, campaign_structure
+    uploaded_by = Column(String(100))
+    row_count = Column(Integer)
+    column_mapping = Column(JSON)
+    status = Column(String(20), default="pending")  # pending, confirmed, analyzed, error
+    error_message = Column(Text)
+    account_name = Column(String(255))
+    created_at = Column(DateTime, server_default=func.now())
+
+    account = relationship("Account", back_populates="imports")
+    imported_search_terms = relationship("ImportedSearchTerm", back_populates="import_record", cascade="all, delete-orphan")
+
+
+class ImportedSearchTerm(Base):
+    __tablename__ = "imported_search_terms"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    import_id = Column(Integer, ForeignKey("imports.id", ondelete="CASCADE"))
+    account_id = Column(Integer, ForeignKey("accounts.id"))
+    search_term = Column(Text, nullable=False)
+    campaign = Column(String(255))
+    ad_group = Column(String(255))
+    matched_keyword = Column(String(255))
+    match_type_triggered = Column(String(50))
+    impressions = Column(Integer)
+    clicks = Column(Integer)
+    cost = Column(Numeric(10, 2))
+    conversions = Column(Numeric(10, 2))
+    conv_rate = Column(Numeric(5, 4))
+    ctr = Column(Numeric(5, 4))
+    recommended_match_type = Column(String(10))  # EXACT, PHRASE, SKIP, NEGATIVE
+    match_type_reason = Column(Text)
+    relevance_score = Column(Integer)
+    relevance_category = Column(String(20))
+    priority = Column(String(10))
+    suggested_ad_group = Column(String(255))
+    is_duplicate = Column(Boolean, default=False)
+    is_negative_candidate = Column(Boolean, default=False)
+    created_at = Column(DateTime, server_default=func.now())
+
+    import_record = relationship("Import", back_populates="imported_search_terms")
+    account = relationship("Account", back_populates="imported_search_terms")
+
+
 # Indexes
 Index("idx_keyword_ideas_account", KeywordIdea.account_id)
 Index("idx_keyword_ideas_priority", KeywordIdea.priority)
 Index("idx_keyword_ideas_score", KeywordIdea.total_score.desc())
 Index("idx_decisions_account", Decision.account_id)
 Index("idx_research_runs_account", ResearchRun.account_id)
+Index("idx_imports_account", Import.account_id)
+Index("idx_imported_search_terms_import", ImportedSearchTerm.import_id)
+Index("idx_imported_search_terms_account", ImportedSearchTerm.account_id)
