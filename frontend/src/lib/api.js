@@ -97,6 +97,45 @@ export const exportApi = {
   }),
 };
 
+// --- Import ---
+export const imports = {
+  upload: (file, fileType = 'search_terms') => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('file_type', fileType);
+    return fetch(`${BASE_URL}/import/upload`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    }).then(async (res) => {
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || `HTTP ${res.status}`);
+      }
+      return res.json();
+    });
+  },
+  confirm: (data) => request('/import/confirm', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }),
+  analyze: (uploadId) => request(`/import/analyze?upload_id=${uploadId}`, {
+    method: 'POST',
+  }),
+  get: (importId) => request(`/import/${importId}`),
+  results: (importId, params = {}) => {
+    const query = new URLSearchParams();
+    for (const [key, val] of Object.entries(params)) {
+      if (val !== undefined && val !== null && val !== '') query.set(key, val);
+    }
+    const qs = query.toString();
+    return request(`/import/${importId}/results${qs ? `?${qs}` : ''}`);
+  },
+  list: () => request('/import/list/all'),
+  delete: (importId) => request(`/import/${importId}`, { method: 'DELETE' }),
+  export: (importId) => request(`/import/${importId}/export`, { method: 'POST' }),
+};
+
 // --- Settings ---
 export const settings = {
   get: () => request('/settings'),
