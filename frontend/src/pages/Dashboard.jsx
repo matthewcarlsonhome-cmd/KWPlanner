@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { accounts, research } from '../lib/api'
+import { accounts, research, imports } from '../lib/api'
 
 function StatusBadge({ date }) {
   if (!date) return <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-700">Never</span>
@@ -28,6 +28,7 @@ export default function Dashboard() {
   const [syncing, setSyncing] = useState(false)
   const [runningAll, setRunningAll] = useState(false)
   const [runStatus, setRunStatus] = useState(null)
+  const [importList, setImportList] = useState([])
   const navigate = useNavigate()
 
   const loadAccounts = useCallback(async () => {
@@ -43,6 +44,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     loadAccounts()
+    imports.list().then(setImportList).catch(() => {})
   }, [loadAccounts])
 
   // Poll research status
@@ -127,6 +129,12 @@ export default function Dashboard() {
         <h2 className="text-lg font-semibold text-gray-900">Accounts</h2>
         <div className="flex gap-3">
           <button
+            onClick={() => navigate('/import')}
+            className="px-4 py-2 text-sm border border-blue-300 text-blue-700 rounded-md hover:bg-blue-50"
+          >
+            Import Data
+          </button>
+          <button
             onClick={handleSync}
             disabled={syncing}
             className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
@@ -189,7 +197,12 @@ export default function Dashboard() {
                     <Link to={`/accounts/${acct.id}`} className="font-medium text-blue-600 hover:underline">
                       {acct.name}
                     </Link>
-                    <p className="text-xs text-gray-400">{acct.google_ads_id}</p>
+                    <div className="flex items-center gap-1">
+                      <p className="text-xs text-gray-400">{acct.google_ads_id}</p>
+                      {acct.google_ads_id?.startsWith('IMPORT-') && (
+                        <span className="px-1.5 py-0.5 text-[10px] rounded bg-indigo-100 text-indigo-700 font-medium">Import</span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3"><StatusBadge date={acct.latest_run_date} /></td>
                   <td className="text-center px-4 py-3">{acct.ideas_count ?? '-'}</td>
@@ -215,6 +228,72 @@ export default function Dashboard() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Recent Imports */}
+      {importList.length > 0 && (
+        <div className="mt-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Recent Imports</h2>
+            <button
+              onClick={() => navigate('/import')}
+              className="text-sm text-blue-600 hover:underline"
+            >
+              New Import
+            </button>
+          </div>
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="text-left px-4 py-3 font-medium text-gray-700">File</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-700">Account</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-700">Type</th>
+                  <th className="text-center px-4 py-3 font-medium text-gray-700">Rows</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-700">Status</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-700">Date</th>
+                  <th className="text-right px-4 py-3 font-medium text-gray-700">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {importList.slice(0, 10).map(imp => (
+                  <tr key={imp.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-gray-900">{imp.file_name}</td>
+                    <td className="px-4 py-3 text-gray-700">{imp.account_name || '-'}</td>
+                    <td className="px-4 py-3">
+                      <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">
+                        {imp.file_type === 'search_terms' ? 'Search Terms' : 'Keywords'}
+                      </span>
+                    </td>
+                    <td className="text-center px-4 py-3 text-gray-700">{imp.row_count ?? '-'}</td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-0.5 text-xs rounded-full ${
+                        imp.status === 'analyzed' ? 'bg-green-100 text-green-700'
+                        : imp.status === 'confirmed' ? 'bg-yellow-100 text-yellow-700'
+                        : imp.status === 'error' ? 'bg-red-100 text-red-700'
+                        : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {imp.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-500 text-xs">
+                      {imp.created_at ? new Date(imp.created_at).toLocaleDateString() : '-'}
+                    </td>
+                    <td className="text-right px-4 py-3">
+                      {imp.status === 'analyzed' ? (
+                        <Link to={`/imports/${imp.id}/results`} className="text-blue-600 hover:underline text-sm">
+                          View Results
+                        </Link>
+                      ) : (
+                        <span className="text-gray-400 text-sm">-</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

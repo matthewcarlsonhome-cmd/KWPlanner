@@ -1,0 +1,9 @@
+Campaign,Ad Group,Keyword,Match Type,Status,Impressions,Clicks,Cost,Conversions,Quality Score,Avg CPC
+Pool Builder - Search,Custom Pool Builder,[pool builder near me],Exact Match,Enabled,1240,87,312.50,5.2,7,3.59
+Pool Builder - Search,Custom Pool Builder,"pool builder",Phrase Match,Enabled,2100,145,520.00,8.0,6,3.59
+Pool Builder - Search,Pool Cost,[pool cost houston],Exact Match,Enabled,450,32,128.00,3.1,8,4.00
+Pool Renovation - Search,Pool Resurfacing,[pool resurfacing],Exact Match,Enabled,620,48,192.00,4.0,7,4.00
+Pool Renovation - Search,Pool Resurfacing,"pool replastering",Phrase Match,Enabled,310,22,88.00,2.0,6,4.00
+Hot Tub - Search,Hot Tub Install,[hot tub installation],Exact Match,Enabled,280,18,72.00,1.5,7,4.00
+Hot Tub - Search,Hot Tub Sale,"hot tub sale near me",Phrase Match,Enabled,520,35,140.00,2.8,6,4.00
+Pool Builder - Search,Pool Design,[custom pool design],Exact Match,Enabled,380,28,112.00,2.2,7,4.00
